@@ -1,0 +1,135 @@
+Menu="Dashboard"
+---
+<?php
+$plugin = 'supla-pwr-unraid';
+$cfgFile = "/boot/config/plugins/$plugin/$plugin.cfg";
+$cfg = ['UIREFRESH' => '10'];
+if (file_exists($cfgFile)) {
+    $parsed = parse_ini_file($cfgFile);
+    if (is_array($parsed)) {
+        $cfg = array_merge($cfg, $parsed);
+    }
+}
+$refreshMs = max(5, (int) ($cfg['UIREFRESH'] ?: 10)) * 1000;
+?>
+<style>
+#spw-native-tbody .spw-tile-body { padding: 4px 8px 8px; }
+#spw-native-tbody .spw-tile-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+#spw-native-tbody .spw-tile-stat { flex: 1 1 28%; background: rgba(245,166,35,.08); border: 1px solid rgba(245,166,35,.18);
+  border-radius: 8px; padding: 7px 8px; text-align: center; }
+#spw-native-tbody .spw-tile-stat .num { font-size: 16px; font-weight: 700; color: #f5a623; line-height: 1.1; }
+#spw-native-tbody .spw-tile-stat .lbl { font-size: 10px; color: #8993a4; text-transform: uppercase; letter-spacing: .03em; margin-top: 2px; }
+#spw-native-tbody .spw-tile-empty, #spw-native-tbody .spw-tile-error { font-size: 12px; color: #8993a4; padding: 6px 2px; }
+#spw-native-tbody .spw-tile-error { color: #ff8080; }
+#spw-native-tbody .spw-subtitle.green-text { color: #6bcb7a; }
+#spw-native-tbody .spw-subtitle.red-text { color: #ff8080; }
+</style>
+
+<script id="spw-template" type="text/template">
+<tbody id='spw-native-tbody' title='<?=$plugin?>' class='sortable' sort='spw-dashboard-tile-001'>
+  <tr>
+    <td>
+      <span class='tile-header'>
+        <span class='tile-header-left'>
+          <i class='fa fa-bolt f32'></i>
+          <div class='section'>
+            <h3 class='tile-header-main'>Supla Power Monitor</h3>
+            <span id='spw-tile-subtitle' class='spw-subtitle'>Ładowanie…</span>
+          </div>
+        </span>
+        <span class='tile-header-right'>
+          <span class='tile-header-right-controls'>
+            <a href='#' onclick='spwTileRefresh();return false;' title='Odśwież'>
+              <i class='fa fa-fw fa-refresh control'></i>
+            </a>
+            <a href='/Settings/SuplaPwrUnraid' title='Ustawienia'>
+              <i class='fa fa-fw fa-cog control'></i>
+            </a>
+          </span>
+        </span>
+      </span>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <div class='spw-tile-body' id='spw-tile-body'>
+        <div class='spw-tile-empty'>Ładowanie danych z SUPLA Cloud…</div>
+      </div>
+    </td>
+  </tr>
+</tbody>
+</script>
+
+<script>
+(function () {
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function fmt(v, d) { d = d === undefined ? 1 : d; return (v === null || v === undefined) ? '—' : Number(v).toFixed(d); }
+
+  // wstrzyknij naszą tbody do wspólnej tabeli dashboardu (ten sam kontener co kafelki systemowe),
+  // zamiast renderowac sie jako osobny blok na cala szerokosc strony
+  function mountTile() {
+    if (document.getElementById('spw-native-tbody')) { return true; }
+    var box = document.getElementById('db_box1') || document.querySelector('table.dashboard');
+    if (!box) { return false; }
+    var tpl = document.getElementById('spw-template');
+    box.insertAdjacentHTML('beforeend', tpl.innerHTML.trim());
+    return true;
+  }
+
+  window.spwTileRefresh = function () {
+    var body = document.getElementById('spw-tile-body');
+    var sub = document.getElementById('spw-tile-subtitle');
+    if (!body || !sub) { return; }
+    body.innerHTML = '<div class="spw-tile-empty">Odświeżanie…</div>';
+    fetch('/plugins/supla-pwr-unraid/scripts/scan.php')
+      .then(function (r) {
+        return r.text().then(function (text) {
+          if (!text) { throw new Error('Pusta odpowiedź (HTTP ' + r.status + ') — sesja WebGUI mogła wygasnąć.'); }
+          try { return JSON.parse(text); }
+          catch (e) { throw new Error('Nieprawidłowa odpowiedź (HTTP ' + r.status + ')'); }
+        });
+      })
+      .then(function (d) {
+        if (!d.ok) {
+          sub.textContent = 'Błąd';
+          sub.className = 'spw-subtitle red-text';
+          body.innerHTML = '<div class="spw-tile-error">' + esc(d.error) + '</div>';
+          return;
+        }
+        var v = d.data;
+        sub.textContent = fmt(v.power, 0) + ' W';
+        sub.className = 'spw-subtitle green-text';
+
+        body.innerHTML = '<div class="spw-tile-stats">' +
+          '<div class="spw-tile-stat"><div class="num">' + fmt(v.voltage, 0) + ' V</div><div class="lbl">Napięcie</div></div>' +
+          '<div class="spw-tile-stat"><div class="num">' + fmt(v.current, 2) + ' A</div><div class="lbl">Prąd</div></div>' +
+          '<div class="spw-tile-stat"><div class="num">' + fmt(v.power, 0) + ' W</div><div class="lbl">Moc</div></div>' +
+          '<div class="spw-tile-stat"><div class="num">' + fmt(v.energy, 1) + ' kWh</div><div class="lbl">Zużycie</div></div>' +
+          '<div class="spw-tile-stat"><div class="num">' + fmt(v.cost, 2) + ' ' + esc(v.currency || '') + '</div><div class="lbl">Koszt</div></div>' +
+          '<div class="spw-tile-stat"><div class="num">' + fmt(v.factor, 0) + '%</div><div class="lbl">Cos φ</div></div>' +
+          '</div>';
+      })
+      .catch(function (e) {
+        sub.textContent = 'Błąd';
+        sub.className = 'spw-subtitle red-text';
+        body.innerHTML = '<div class="spw-tile-error">' + esc(e.message || String(e)) + '</div>';
+      });
+  };
+
+  function init() {
+    if (!mountTile()) {
+      // tabela dashboardu moze jeszcze nie istnieć w DOM - sprobuj ponownie za chwile
+      setTimeout(init, 300);
+      return;
+    }
+    spwTileRefresh();
+    setInterval(spwTileRefresh, <?=$refreshMs?>);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

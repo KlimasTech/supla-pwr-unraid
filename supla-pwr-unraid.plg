@@ -1,0 +1,77 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name        "supla-pwr-unraid">
+<!ENTITY author      "KlimasTech">
+<!ENTITY version     "2026.10.24">
+<!ENTITY launch      "Utilities/supla-pwr-unraid">
+<!ENTITY pluginURL   "https://raw.githubusercontent.com/KlimasTech/supla-pwr-unraid/main/supla-pwr-unraid.plg">
+<!ENTITY packageURL  "https://github.com/KlimasTech/supla-pwr-unraid/releases/download/&version;/supla-pwr-unraid-&version;.txz">
+<!ENTITY packageMD5  "PLACEHOLDER_MD5">
+<!ENTITY pluginLOC   "/boot/config/plugins/&name;">
+<!ENTITY emhttpLOC   "/usr/local/emhttp/plugins/&name;">
+]>
+
+<PLUGIN name="&name;"
+        author="&author;"
+        version="&version;"
+        launch="&launch;"
+        pluginURL="&pluginURL;"
+        icon="bolt"
+        min="6.9.0"
+        support="https://github.com/KlimasTech/supla-pwr-unraid/issues"
+        project="https://github.com/KlimasTech/supla-pwr-unraid"
+        readme="https://github.com/KlimasTech/supla-pwr-unraid#readme"
+>
+
+<CHANGES>
+### &version;
+- Pierwsze wydanie: dashboard mocy/napięcia/prądu/zużycia z licznika energii SUPLA (Direct Link), ustawienia połączenia, test na żywo
+</CHANGES>
+
+<!-- PRE-INSTALL -->
+<FILE Run="/bin/bash">
+<INLINE>
+mkdir -p &pluginLOC;
+rm -f $(ls &pluginLOC;/*.txz 2>/dev/null)
+</INLINE>
+</FILE>
+
+<!-- INSTALACJA PACZKI -->
+<FILE Name="&pluginLOC;/supla-pwr-unraid-&version;.txz" Run="upgradepkg --install-new">
+<URL>&packageURL;</URL>
+<MD5>&packageMD5;</MD5>
+</FILE>
+
+<!-- POST-INSTALL -->
+<FILE Run="/bin/bash">
+<INLINE>
+mkdir -p &pluginLOC;
+if [ ! -f &pluginLOC;/&name;.cfg ]; then
+  cp &emhttpLOC;/default.cfg &pluginLOC;/&name;.cfg 2>/dev/null || true
+fi
+echo ""
+echo "-------------------------------------------"
+echo " Supla Power Monitor &version; zainstalowany."
+echo " Konfiguracja: Settings -> Utilities -> Supla Power Monitor"
+echo "-------------------------------------------"
+echo ""
+</INLINE>
+</FILE>
+
+<!-- AKTUALIZACJA: wyczyść starą wersję przed reinstalacją -->
+<FILE Run="/bin/bash" Method="update">
+<INLINE>
+rm -rf &emhttpLOC;
+</INLINE>
+</FILE>
+
+<!-- USUWANIE -->
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+removepkg supla-pwr-unraid-&version;
+rm -rf &emhttpLOC;
+rm -rf &pluginLOC;
+</INLINE>
+</FILE>
+
+</PLUGIN>

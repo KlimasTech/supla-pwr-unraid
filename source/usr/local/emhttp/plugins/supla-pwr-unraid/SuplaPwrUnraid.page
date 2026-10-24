@@ -1,0 +1,196 @@
+Menu="Utilities"
+Title="Supla Power Monitor"
+Icon="bolt"
+---
+<?php
+$plugin = "supla-pwr-unraid";
+$cfgFile = "/boot/config/plugins/$plugin/$plugin.cfg";
+$cfg = [
+    'DEVICE_URL' => '', 'UIREFRESH' => '10', 'PRICE_OVERRIDE' => '',
+];
+if (file_exists($cfgFile)) {
+    $parsed = parse_ini_file($cfgFile);
+    if (is_array($parsed)) {
+        $cfg = array_merge($cfg, $parsed);
+    }
+}
+$varIni = @parse_ini_file('/var/local/emhttp/var.ini');
+$csrfToken = is_array($varIni) ? ($varIni['csrf_token'] ?? '') : '';
+?>
+<style>
+#spw-wrap { max-width: 980px; font-family: inherit; color: #d8dee9; }
+#spw-wrap * { box-sizing: border-box; }
+#spw-wrap .spw-card { background: #1b212c; border: 1px solid #2a323f; border-radius: 10px; padding: 20px 22px;
+  margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+#spw-wrap .spw-card h3 { margin: 0 0 14px; font-size: 15px; color: #e8ecf2; font-weight: 700;
+  display: flex; align-items: center; gap: 8px; }
+#spw-wrap .spw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+#spw-wrap label.spw-label { display: block; font-size: 12px; color: #8993a4; margin-bottom: 5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em; }
+#spw-wrap input[type=text], #spw-wrap input[type=number] {
+  width: 100%; background: #10151c; border: 1px solid #333c49; border-radius: 7px; padding: 9px 11px;
+  color: #e8ecf2; font-size: 13px; outline: none; transition: border-color .15s; }
+#spw-wrap input:focus { border-color: #f5a623; }
+#spw-wrap .spw-field { margin-bottom: 14px; }
+#spw-wrap .spw-btn { background: linear-gradient(135deg,#f5a623,#e0841a); border: none; color: #fff; font-weight: 700;
+  font-size: 13px; padding: 10px 20px; border-radius: 7px; cursor: pointer; transition: transform .1s, box-shadow .15s; }
+#spw-wrap .spw-btn:hover { box-shadow: 0 4px 14px rgba(245,166,35,.35); transform: translateY(-1px); }
+#spw-wrap .spw-btn:active { transform: translateY(0); }
+#spw-wrap .spw-btn.secondary { background: #2a323f; }
+#spw-wrap .spw-btn.secondary:hover { box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+#spw-wrap .spw-btn-row { display: flex; gap: 10px; margin-top: 6px; }
+#spw-wrap .spw-status { margin-top: 12px; font-size: 13px; padding: 9px 12px; border-radius: 7px; display: none; }
+#spw-wrap .spw-status.ok { display: block; background: rgba(66,189,129,.12); color: #5fd79b; border: 1px solid rgba(95,215,155,.25); }
+#spw-wrap .spw-status.err { display: block; background: rgba(255,90,90,.1); color: #ff8080; border: 1px solid rgba(255,128,128,.25); }
+#spw-wrap .spw-instructions { font-size: 12.5px; line-height: 1.7; color: #9aa4b5; }
+#spw-wrap .spw-instructions b { color: #cfd8e3; }
+#spw-wrap .spw-instructions ol { margin: 8px 0 0 18px; padding: 0; }
+#spw-wrap .spw-instructions code { background: #10151c; padding: 1px 6px; border-radius: 4px; color: #f5a623; }
+
+#spw-wrap .spw-preview { display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+#spw-wrap .spw-preview.show { display: grid; }
+#spw-wrap .spw-stat { background: rgba(245,166,35,.08); border: 1px solid rgba(245,166,35,.18);
+  border-radius: 8px; padding: 10px 12px; text-align: center; }
+#spw-wrap .spw-stat .num { font-size: 18px; font-weight: 700; color: #f5a623; line-height: 1.1; }
+#spw-wrap .spw-stat .lbl { font-size: 10.5px; color: #8993a4; text-transform: uppercase; letter-spacing: .03em; margin-top: 4px; }
+</style>
+
+<div id="spw-wrap">
+  <div class="spw-card">
+    <h3>🔌 Połączenie z SUPLA Cloud</h3>
+    <div class="spw-grid">
+      <div class="spw-field" style="grid-column: 1 / -1;">
+        <label class="spw-label">Direct Link URL (kanał licznika energii)</label>
+        <input type="text" id="spw-url" placeholder="https://svr1.supla.org/direct/ID/KEY" value="<?=htmlspecialchars($cfg['DEVICE_URL'])?>">
+      </div>
+      <div class="spw-field">
+        <label class="spw-label">Odświeżanie UI (sekundy)</label>
+        <input type="number" id="spw-refresh" placeholder="10" value="<?=htmlspecialchars($cfg['UIREFRESH'] ?: '10')?>">
+      </div>
+      <div class="spw-field">
+        <label class="spw-label">Nadpisanie ceny (opcjonalnie, /kWh)</label>
+        <input type="text" id="spw-price" placeholder="puste = cena z SUPLA Cloud" value="<?=htmlspecialchars($cfg['PRICE_OVERRIDE'])?>">
+      </div>
+    </div>
+    <div class="spw-btn-row">
+      <button type="button" class="spw-btn" id="spw-save">💾 Zapisz</button>
+      <button type="button" class="spw-btn secondary" id="spw-test">⚡ Testuj połączenie</button>
+    </div>
+    <div class="spw-status" id="spw-status"></div>
+    <div class="spw-preview" id="spw-preview"></div>
+  </div>
+
+  <div class="spw-card">
+    <h3>📖 Jak utworzyć Direct Link</h3>
+    <div class="spw-instructions">
+      Plugin odczytuje dane przez publiczny <b>Direct Link</b> SUPLA Cloud — nie wymaga logowania
+      ani kluczy OAuth, tylko sam URL wskazujący na konkretny kanał licznika energii:
+      <ol>
+        <li>Zaloguj się na <code>cloud.supla.org</code> (lub własny serwer SUPLA).</li>
+        <li>Przejdź do <b>Kanały</b> i znajdź kanał licznika energii (np. Zamel EFM-01).</li>
+        <li>Otwórz ustawienia kanału → <b>Bezpośrednie linki (Direct Links)</b> → <b>Dodaj nowy</b>.</li>
+        <li>Zaznacz uprawnienie <b>odczyt stanu</b> ("read state" / GET).</li>
+        <li>Skopiuj wygenerowany URL (postaci <code>https://svr1.supla.org/direct/ID/KEY</code>) i wklej powyżej.</li>
+        <li><b>Zapisz</b>, potem <b>Testuj połączenie</b>, żeby zweryfikować odczyt na żywo.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var SPW = {
+    csrfToken: <?=json_encode($csrfToken)?>,
+    scanUrl: '/plugins/supla-pwr-unraid/scripts/scan.php',
+    saveUrl: '/plugins/supla-pwr-unraid/scripts/save.php',
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  // Bezpieczny fetch->JSON: jeśli serwer nie zwróci poprawnego JSON (np.
+  // przekierowanie do loginu po wygaśnięciu sesji, 403 CSRF), pokazuje
+  // dokładny status/treść zamiast kryptycznego "Unexpected end of JSON input".
+  function spwFetchJson(url, opts) {
+    opts = opts || {};
+    // webGUI (auto_prepend_file) wymaga tokena CSRF dla kazdego POST - przy JSON body
+    // $_POST jest puste, wiec token trzeba wyslac jako naglowek X-Csrf-Token.
+    if ((opts.method || 'GET').toUpperCase() === 'POST') {
+      opts.headers = Object.assign({ 'X-Csrf-Token': SPW.csrfToken }, opts.headers || {});
+    }
+    return fetch(url, opts).then(function (r) {
+      return r.text().then(function (text) {
+        if (!text) {
+          throw new Error('Pusta odpowiedź serwera (HTTP ' + r.status + '). Sesja WebGUI mogła wygasnąć — odśwież stronę i zaloguj się ponownie.');
+        }
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          if (/<html|<!doctype/i.test(text)) {
+            throw new Error('Serwer zwrócił stronę HTML zamiast danych (HTTP ' + r.status + ') — prawdopodobnie wygasła sesja WebGUI. Odśwież stronę i zaloguj się ponownie.');
+          }
+          throw new Error('Nieprawidłowa odpowiedź serwera (HTTP ' + r.status + '): ' + text.slice(0, 200));
+        }
+      });
+    });
+  }
+
+  function showStatus(ok, msg) {
+    var el = $('spw-status');
+    el.className = 'spw-status ' + (ok ? 'ok' : 'err');
+    el.textContent = msg;
+  }
+
+  function fmt(v, d) {
+    d = d === undefined ? 1 : d;
+    return (v === null || v === undefined) ? '—' : Number(v).toFixed(d);
+  }
+
+  function renderPreview(d) {
+    var box = $('spw-preview');
+    box.className = 'spw-preview show';
+    box.innerHTML =
+      '<div class="spw-stat"><div class="num">' + fmt(d.power, 1) + ' W</div><div class="lbl">Moc</div></div>' +
+      '<div class="spw-stat"><div class="num">' + fmt(d.voltage, 1) + ' V</div><div class="lbl">Napięcie</div></div>' +
+      '<div class="spw-stat"><div class="num">' + fmt(d.current, 2) + ' A</div><div class="lbl">Prąd</div></div>' +
+      '<div class="spw-stat"><div class="num">' + fmt(d.energy, 2) + ' kWh</div><div class="lbl">Zużycie</div></div>' +
+      '<div class="spw-stat"><div class="num">' + fmt(d.factor, 1) + ' %</div><div class="lbl">Cos φ</div></div>' +
+      '<div class="spw-stat"><div class="num">' + fmt(d.cost, 2) + ' ' + (d.currency || '') + '</div><div class="lbl">Koszt</div></div>';
+  }
+
+  // --- Zapis ustawień ---
+  $('spw-save').addEventListener('click', function () {
+    var payload = {
+      device_url: $('spw-url').value.trim(),
+      uirefresh: $('spw-refresh').value.trim() || '10',
+      price_override: $('spw-price').value.trim(),
+      csrf_token: SPW.csrfToken,
+    };
+    spwFetchJson(SPW.saveUrl, { method: 'POST', body: JSON.stringify(payload) })
+      .then(function (d) {
+        showStatus(!!d.ok, d.ok ? 'Zapisano ustawienia.' : (d.error || 'Błąd zapisu.'));
+      })
+      .catch(function (e) { showStatus(false, e.message || String(e)); });
+  });
+
+  // --- Test połączenia (odczyt na żywo z aktualnych pól, nie z zapisanej konfiguracji) ---
+  $('spw-test').addEventListener('click', function () {
+    showStatus(true, 'Łączenie…');
+    $('spw-preview').className = 'spw-preview';
+    // Zapisz najpierw aktualne pola, żeby scan.php (który czyta z zapisanej konfiguracji) widział to co testujemy.
+    var payload = {
+      device_url: $('spw-url').value.trim(),
+      uirefresh: $('spw-refresh').value.trim() || '10',
+      price_override: $('spw-price').value.trim(),
+      csrf_token: SPW.csrfToken,
+    };
+    spwFetchJson(SPW.saveUrl, { method: 'POST', body: JSON.stringify(payload) })
+      .then(function () { return spwFetchJson(SPW.scanUrl); })
+      .then(function (d) {
+        if (!d.ok) { showStatus(false, d.error); return; }
+        showStatus(true, 'Połączono — odczyt na żywo poniżej.');
+        renderPreview(d.data);
+      })
+      .catch(function (e) { showStatus(false, e.message || String(e)); });
+  });
+})();
+</script>
