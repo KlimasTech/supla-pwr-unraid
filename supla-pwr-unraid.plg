@@ -28,7 +28,7 @@
 - Kafelek Dashboard: odświeżanie danych w tle teraz nie czyści już widocznych wartości — poprzednio przy każdym cyklu (domyślnie co 10s) kafelek na chwilę pokazywał "Odświeżanie…" i znikały liczby, teraz stare dane zostają widoczne aż przyjdą nowe (płynna podmiana bez migotania)
 
 ### 2026.10.24a
-- Krytyczna poprawka: przycisk "Zapisz"/"Testuj połączenie" w ogóle nie działał — parser Markdown unRAID (webGUI Settings) rozpoznawał dosłowny tekst `<html`/`<!doctype` wewnątrz kodu JS jako początek nowego bloku HTML i przerywał "ochronę" tagu `<script>`, przez co cały skrypt renderował się jako martwy tekst zamiast wykonywalnego kodu. Zamieniono wykrywanie odpowiedzi HTML na bezpieczne sprawdzenie pierwszego znaku (bez literalnych tagów w kodzie źródłowym).
+- Krytyczna poprawka: przycisk "Zapisz"/"Testuj połączenie" w ogóle nie działał — parser Markdown unRAID (webGUI Settings) rozpoznawał dosłowny tekst "html"/"doctype" wewnątrz kodu JS jako początek nowego bloku HTML i przerywał "ochronę" tagu script, przez co cały skrypt renderował się jako martwy tekst zamiast wykonywalnego kodu. Zamieniono wykrywanie odpowiedzi HTML na bezpieczne sprawdzenie pierwszego znaku (bez literalnych tagów w kodzie źródłowym).
 
 ### 2026.10.24
 - Pierwsze wydanie: dashboard mocy/napięcia/prądu/zużycia z licznika energii SUPLA (Direct Link), ustawienia połączenia, test na żywo
