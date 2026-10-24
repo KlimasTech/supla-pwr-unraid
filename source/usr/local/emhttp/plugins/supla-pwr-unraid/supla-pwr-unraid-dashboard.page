@@ -80,7 +80,9 @@ $refreshMs = max(5, (int) ($cfg['UIREFRESH'] ?: 10)) * 1000;
     var body = document.getElementById('spw-tile-body');
     var sub = document.getElementById('spw-tile-subtitle');
     if (!body || !sub) { return; }
-    body.innerHTML = '<div class="spw-tile-empty">Odświeżanie…</div>';
+    // UWAGA: celowo NIE czyścimy body.innerHTML przed fetch — stare dane
+    // zostają widoczne aż nowe przyjdą, żeby kafelek nie migotał/nie znikał
+    // przy każdym cyklu odświeżania (poprzednio pokazywał "Odświeżanie…").
     fetch('/plugins/supla-pwr-unraid/scripts/scan.php')
       .then(function (r) {
         return r.text().then(function (text) {

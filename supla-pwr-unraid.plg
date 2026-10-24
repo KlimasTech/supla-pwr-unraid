@@ -2,11 +2,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name        "supla-pwr-unraid">
 <!ENTITY author      "KlimasTech">
-<!ENTITY version     "2026.10.24a">
+<!ENTITY version     "2026.10.24b">
 <!ENTITY launch      "Utilities/supla-pwr-unraid">
 <!ENTITY pluginURL   "https://raw.githubusercontent.com/KlimasTech/supla-pwr-unraid/main/supla-pwr-unraid.plg">
 <!ENTITY packageURL  "https://github.com/KlimasTech/supla-pwr-unraid/releases/download/&version;/supla-pwr-unraid-&version;.txz">
-<!ENTITY packageMD5  "d172f58e5136fb39f30a1b94d71e0270">
+<!ENTITY packageMD5  "e5363f8660bddf90410c0ad2afca7fd4">
 <!ENTITY pluginLOC   "/boot/config/plugins/&name;">
 <!ENTITY emhttpLOC   "/usr/local/emhttp/plugins/&name;">
 ]>
@@ -25,6 +25,9 @@
 
 <CHANGES>
 ### &version;
+- Kafelek Dashboard: odświeżanie danych w tle teraz nie czyści już widocznych wartości — poprzednio przy każdym cyklu (domyślnie co 10s) kafelek na chwilę pokazywał "Odświeżanie…" i znikały liczby, teraz stare dane zostają widoczne aż przyjdą nowe (płynna podmiana bez migotania)
+
+### 2026.10.24a
 - Krytyczna poprawka: przycisk "Zapisz"/"Testuj połączenie" w ogóle nie działał — parser Markdown unRAID (webGUI Settings) rozpoznawał dosłowny tekst `<html`/`<!doctype` wewnątrz kodu JS jako początek nowego bloku HTML i przerywał "ochronę" tagu `<script>`, przez co cały skrypt renderował się jako martwy tekst zamiast wykonywalnego kodu. Zamieniono wykrywanie odpowiedzi HTML na bezpieczne sprawdzenie pierwszego znaku (bez literalnych tagów w kodzie źródłowym).
 
 ### 2026.10.24
