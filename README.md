@@ -1,7 +1,7 @@
 # Supla Power Monitor — plugin do unRAID
 
 Plugin do unRAID OS wyświetlający w WebGUI bieżący odczyt licznika energii
-podłączonego do ekosystemu SUPLA (np. Zamel EFM-01) — moc, napięcie, prąd,
+podłączonego do ekosystemu SUPLA (np. Zamel MEW-01) — moc, napięcie, prąd,
 zużycie i koszt, pobierane przez publiczny **Direct Link** SUPLA Cloud.
 
 Zbudowany od zera jako nowy, niezależny projekt — inspirowany ideą
