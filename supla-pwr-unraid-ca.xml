@@ -1,0 +1,8 @@
+<Plugin>
+  <Name>Supla Power Monitor</Name>
+  <PluginURL>https://raw.githubusercontent.com/KlimasTech/supla-pwr-unraid/main/supla-pwr-unraid.plg</PluginURL>
+  <Support>https://forums.unraid.net/topic/REPLACE_WITH_YOUR_SUPPORT_TOPIC_ID</Support>
+  <Project>https://github.com/KlimasTech/supla-pwr-unraid</Project>
+  <Overview>Reads live power/voltage/current/energy data from a SUPLA Cloud energy meter via a public Direct Link (no OAuth required) and shows it in a native Dashboard tile, with a Settings page to configure and test the connection.</Overview>
+  <Category>Tools:Utilities</Category>
+</Plugin>

@@ -1,0 +1,9 @@
+<CommunityApplications>
+  <Profile>
+Supla Power Monitor is a plugin for monitoring an energy meter (e.g. Zamel EFM-01) connected to [SUPLA Cloud](https://supla.org) through a public Direct Link — no OAuth, no login, just a single URL that returns live power/voltage/current/energy readings. It adds a native Dashboard tile showing live readings and a Settings page to configure the Direct Link URL and test the connection.
+
+Maintained by KlimasTech. For support, use the forum thread linked below.
+  </Profile>
+  <WebPage>https://github.com/KlimasTech/supla-pwr-unraid</WebPage>
+  <Forum>https://forums.unraid.net/topic/REPLACE_WITH_YOUR_SUPPORT_TOPIC_ID</Forum>
+</CommunityApplications>
