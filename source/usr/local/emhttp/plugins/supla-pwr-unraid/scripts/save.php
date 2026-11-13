@@ -25,6 +25,11 @@ register_shutdown_function(function () {
 });
 
 try {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        http_response_code(405);
+        throw new Exception('Dozwolona jest tylko metoda POST.');
+    }
+
     $cfgDir = '/boot/config/plugins/supla-pwr-unraid';
     $cfgFile = $cfgDir . '/supla-pwr-unraid.cfg';
 

@@ -140,6 +140,8 @@ $csrfToken = is_array($varIni) ? ($varIni['csrf_token'] ?? '') : '';
     el.textContent = msg;
   }
 
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
   function fmt(v, d) {
     d = d === undefined ? 1 : d;
     return (v === null || v === undefined) ? '—' : Number(v).toFixed(d);
@@ -154,7 +156,7 @@ $csrfToken = is_array($varIni) ? ($varIni['csrf_token'] ?? '') : '';
       '<div class="spw-stat"><div class="num">' + fmt(d.current, 2) + ' A</div><div class="lbl">Prąd</div></div>' +
       '<div class="spw-stat"><div class="num">' + fmt(d.energy, 2) + ' kWh</div><div class="lbl">Zużycie</div></div>' +
       '<div class="spw-stat"><div class="num">' + fmt(d.factor, 1) + ' %</div><div class="lbl">Cos φ</div></div>' +
-      '<div class="spw-stat"><div class="num">' + fmt(d.cost, 2) + ' ' + (d.currency || '') + '</div><div class="lbl">Koszt</div></div>';
+      '<div class="spw-stat"><div class="num">' + fmt(d.cost, 2) + ' ' + esc(d.currency || '') + '</div><div class="lbl">Koszt</div></div>';
   }
 
   // --- Zapis ustawień ---
